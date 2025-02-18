@@ -5,3 +5,4 @@ this game is built by:
 - CSS
 - JS
 ## Live Preview
+This is a live preview: <h href="https://talalemran.github.io/tic-tac-toe/" target="_blank"/>https://talalemran.github.io/tic-tac-toe/</a>
