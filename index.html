@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .score {
+            margin: 20px 0;
+            font-size: 1.5rem;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-gap: 10px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .cell:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+        }
+        .cell.X {
+            color: #ff4d4d;
+        }
+        .cell.O {
+            color: #4dcaff;
+        }
+        .restart {
+            margin-top: 20px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            color: #fff;
+            background-color: #ff6f61;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        button:hover {
+            background-color: #ff3b2f;
+            transform: scale(1.05);
+        }
+        footer {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 10px 0;
+            font-size: 0.9rem;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+        }
+        @media (max-width: 600px) {
+            .board {
+                grid-template-columns: repeat(3, 90px);
+            }
+            .cell {
+                width: 90px;
+                height: 90px;
+                font-size: 2rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .score {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div class="score">
+        Player X: <span id="scoreX">0</span> | 
+        Computer O: <span id="scoreO">0</span>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="restart">
+        <button onclick="restartGame()">Restart Game</button>
+    </div>
+    <footer>
+        Created by Talal Emran
+    </footer>
+
+    <script>
+        const board = document.getElementById('board');
+        const scoreX = document.getElementById('scoreX');
+        const scoreO = document.getElementById('scoreO');
+        let currentPlayer = 'X';
+        let gameState = ['', '', '', '', '', '', '', '', ''];
+        let xScore = 0;
+        let oScore = 0;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function createBoard() {
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', handleCellClick);
+                board.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(event) {
+            if (currentPlayer !== 'X') return;
+
+            const cell = event.target;
+            const index = cell.getAttribute('data-index');
+
+            if (gameState[index] !== '' || checkWinner()) return;
+
+            gameState[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add(currentPlayer);
+
+            if (checkWinner()) {
+                updateScore('X');
+                alert(`Player X wins!`);
+                resetBoard();
+                return;
+            }
+
+            if (!gameState.includes('')) {
+                alert("It's a draw!");
+                resetBoard();
+                return;
+            }
+
+            currentPlayer = 'O';
+            setTimeout(computerMove, 500);
+        }
+
+        function computerMove() {
+            let availableMoves = gameState.map((cell, index) => cell === '' ? index : null).filter(index => index !== null);
+
+            if (availableMoves.length === 0) return;
+
+            // Check if the computer can win in the next move
+            let move = findWinningMove('O');
+            if (move === null) {
+                // Block the player from winning
+                move = findWinningMove('X');
+            }
+            if (move === null) {
+                // Choose a random move
+                move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            }
+
+            gameState[move] = 'O';
+            const cell = document.querySelector(`.cell[data-index="${move}"]`);
+            cell.textContent = 'O';
+            cell.classList.add('O');
+
+            if (checkWinner()) {
+                updateScore('O');
+                alert(`Computer O wins!`);
+                resetBoard();
+                return;
+            }
+
+            if (!gameState.includes('')) {
+                alert("It's a draw!");
+                resetBoard();
+                return;
+            }
+
+            currentPlayer = 'X';
+        }
+
+        function findWinningMove(player) {
+            for (let condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (gameState[a] === player && gameState[b] === player && gameState[c] === '') return c;
+                if (gameState[a] === player && gameState[c] === player && gameState[b] === '') return b;
+                if (gameState[b] === player && gameState[c] === player && gameState[a] === '') return a;
+            }
+            return null;
+        }
+
+        function checkWinner() {
+            return winningConditions.some(condition => {
+                const [a, b, c] = condition;
+                return (
+                    gameState[a] &&
+                    gameState[a] === gameState[b] &&
+                    gameState[a] === gameState[c]
+                );
+            });
+        }
+
+        function updateScore(winner) {
+            if (winner === 'X') {
+                xScore++;
+                scoreX.textContent = xScore;
+            } else if (winner === 'O') {
+                oScore++;
+                scoreO.textContent = oScore;
+            }
+        }
+
+        function resetBoard() {
+            gameState = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('X', 'O');
+            });
+        }
+
+        function restartGame() {
+            xScore = 0;
+            oScore = 0;
+            scoreX.textContent = xScore;
+            scoreO.textContent = oScore;
+            resetBoard();
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
