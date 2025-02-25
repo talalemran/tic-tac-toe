@@ -18,7 +18,90 @@
             flex-direction: column;
             justify-content: space-between;
         }
-        /* ... (rest of the CSS styles remain the same) ... */
+        h1 {
+            font-size: 2.5rem;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .score {
+            margin: 20px 0;
+            font-size: 1.5rem;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-gap: 10px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .cell:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+        }
+        .cell.X {
+            color: #ff4d4d;
+        }
+        .cell.O {
+            color: #4dcaff;
+        }
+        .restart {
+            margin-top: 20px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            color: #fff;
+            background-color: #ff6f61;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        button:hover {
+            background-color: #ff3b2f;
+            transform: scale(1.05);
+        }
+        footer {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 10px 0;
+            font-size: 0.9rem;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+        }
+        @media (max-width: 600px) {
+            .board {
+                grid-template-columns: repeat(3, 90px);
+            }
+            .cell {
+                width: 90px;
+                height: 90px;
+                font-size: 2rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .score {
+                font-size: 1.2rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -30,11 +113,6 @@
     <div class="board" id="board"></div>
     <div class="restart">
         <button onclick="restartGame()">Restart Game</button>
-        <select id="difficulty">
-            <option value="easy">Easy</option>
-            <option value="moderate">Moderate</option>
-            <option value="hard">Hard</option>
-        </select>
     </div>
     <footer>
         Created by Talal Emran
@@ -44,22 +122,16 @@
         const board = document.getElementById('board');
         const scoreX = document.getElementById('scoreX');
         const scoreO = document.getElementById('scoreO');
-        const difficultySelect = document.getElementById('difficulty');
         let currentPlayer = 'X';
         let gameState = ['', '', '', '', '', '', '', '', ''];
         let xScore = 0;
         let oScore = 0;
-        let currentDifficulty = 'moderate'; // Default
 
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
             [0, 4, 8], [2, 4, 6]
         ];
-
-        difficultySelect.addEventListener('change', () => {
-            currentDifficulty = difficultySelect.value;
-        });
 
         function createBoard() {
             for (let i = 0; i < 9; i++) {
@@ -105,21 +177,15 @@
 
             if (availableMoves.length === 0) return;
 
-            let move;
-
-            if (currentDifficulty === 'easy') {
+            // Check if the computer can win in the next move
+            let move = findWinningMove('O');
+            if (move === null) {
+                // Block the player from winning
+                move = findWinningMove('X');
+            }
+            if (move === null) {
+                // Choose a random move
                 move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
-            } else if (currentDifficulty === 'moderate') {
-                move = findWinningMove('O');
-                if (move === null) {
-                    move = findWinningMove('X');
-                }
-                if (move === null) {
-                    move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
-                }
-            } else if (currentDifficulty === 'hard') {
-                let bestMove = minimax(gameState, 'O');
-                move = bestMove.index;
             }
 
             gameState[move] = 'O';
@@ -143,7 +209,6 @@
             currentPlayer = 'X';
         }
 
-
         function findWinningMove(player) {
             for (let condition of winningConditions) {
                 const [a, b, c] = condition;
@@ -161,18 +226,6 @@
                     gameState[a] &&
                     gameState[a] === gameState[b] &&
                     gameState[a] === gameState[c]
-                );
-            });
-        }
-
-        function checkWinnerForMinimax(boardState, player) {
-            return winningConditions.some(condition => {
-                const [a, b, c] = condition;
-                return (
-                    boardState[a] &&
-                    boardState[a] === boardState[b] &&
-                    boardState[a] === boardState[c] &&
-                    boardState[a] === player
                 );
             });
         }
@@ -204,45 +257,7 @@
             resetBoard();
         }
 
-        function minimax(boardState, player) {
-            let availableMoves = boardState.map((cell, index) => cell === '' ? index : null).filter(index => index !== null);
-
-            if (checkWinnerForMinimax(boardState, 'X')) {
-                return { score: -10 };
-            } else if (checkWinnerForMinimax(boardState, 'O')) {
-                return { score: 10 };
-            } else if (availableMoves.length === 0) {
-                return { score: 0 };
-            }
-
-            let moves = [];
-            for (let i = 0; i < availableMoves.length; i++) {
-                let move = {};
-                move.index = availableMoves[i];
-                boardState[availableMoves[i]] = player;
-
-                if (player === 'O') {
-                    let result = minimax(boardState, 'X');
-                    move.score = result.score;
-                } else {
-                    let result = minimax(boardState, 'O');
-                    move.score = result.score;
-                }
-
-                boardState[availableMoves[i]] = '';
-                moves.push(move);
-            }
-
-            let bestMove;
-            if (player === 'O') {
-                let bestScore = -Infinity;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score > bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
-                    }
-                }
-            } else {
-                let bestScore = Infinity;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score < best
+        createBoard();
+    </script>
+</body>
+</html>
